@@ -2,7 +2,6 @@
 // Created by Kensuke Kosaka on 2016/10/27.
 //
 
-#include <mach/boolean.h>
 #include "MultiLayerPerceptron.h"
 #include "iostream"
 #include <thread>
@@ -12,18 +11,12 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
     this->middleNumber = middle;
     this->outputNumber = output;
     this->middleLayerNumber = middleLayer;
-    this->middleNeurons.reserve(middleLayerNumber);
-    for (int i = 0; i < middleLayerNumber; ++i) {
-        this->middleNeurons[i].reserve(middleNumber);
-    }
-    this->outputNeurons.reserve(outputNumber);
 
     for (int neuron = 0; neuron < output; ++neuron) {
         this->outputNeurons.push_back(Neuron(inputNumber));
     }
 
     std::vector<Neuron> neuronPerLayer;
-    neuronPerLayer.reserve(middleNumber);
 
     for (int layer = 0; layer < middleLayerNumber; ++layer) {
         for (int neuron = 0; neuron < middleNumber; ++neuron) {
@@ -94,7 +87,6 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         successFlg = true;
 
         //region 出力層を学習する
-        //TODO ニューロンの組を半分ずつ分担するとかで並列化できそう
         std::vector<std::thread> threads;
         int charge = 1;
         if (outputNumber <= num_thread) charge = 1;
@@ -123,7 +115,6 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         //region 中間層の層数が2以上の場合のみ，中間層の最終層の学習をする
         if (middleLayerNumber > 1) {
             threads.clear();
-            //TODO 出力層同様，ここも並列化できそう
             if (middleNumber <= num_thread) charge = 1;
             else charge = middleNumber / num_thread;
             for (int i = 0; i < middleNumber; i += charge) {

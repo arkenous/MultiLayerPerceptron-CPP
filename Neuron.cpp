@@ -12,13 +12,12 @@ Neuron::Neuron(unsigned long inputNeuronNum) {
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
     mt.seed(rnd());
-    std::uniform_real_distribution<double> narrow_real_rnd(0.0, 1.0);
-    this->threshold = narrow_real_rnd(mt); // 閾値を乱数で設定
+    std::uniform_real_distribution<double> real_rnd(0.0, 1.0);
+    this->threshold = real_rnd(mt); // 閾値を乱数で設定
 
-    std::uniform_real_distribution<double> wide_real_rnd(0.0, 1.0);
     // 結合荷重をを乱数で初期化
     for (int i = 0; i < this->inputNeuronNum; ++i) {
-        this->inputWeights.push_back(wide_real_rnd(mt));
+        this->inputWeights.push_back(real_rnd(mt));
     }
 }
 
@@ -42,7 +41,7 @@ double Neuron::output(std::vector<double> inputValues){
     // 活性化関数を適用し，出力値を得る
 //    std::cout << "activation(sum): " << activation_tanh(sum) << std::endl;
 
-    return activation_tanh(sum);
+    return activation_sigmoid(sum);
 }
 
 double Neuron::activation_sigmoid(double x){

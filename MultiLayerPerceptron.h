@@ -17,7 +17,7 @@ public:
     void out(std::vector<double> input);
 private:
     static const unsigned int MAX_TRIAL = 10000000;
-    constexpr static const double MAX_GAP = 0.001;
+    constexpr static const double MAX_GAP = 0.1;
     int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN);
 
 

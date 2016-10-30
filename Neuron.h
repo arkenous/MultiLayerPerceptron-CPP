@@ -22,7 +22,7 @@ private:
     std::vector<double> inputWeights;
     double delta = 0.0;
     double threshold = 0.0;
-    double eater = 0.3;
+    double eater = 1.0;
     double activation_sigmoid(double x);
     double activation_relu(double x);
     double activation_tanh(double x);
