@@ -2,7 +2,12 @@
 #include <vector>
 #include "MultiLayerPerceptron.h"
 
-std::vector<double> normalize_between_zero_to_one(std::vector<double> input) {
+/**
+ * 与えられたデータを，0.0から1.0の間に収まるように正規化する
+ * @param input 正規化する入力データ
+ * @return 正規化後のデータ
+ */
+std::vector<double> normalize_between_zero_and_one(std::vector<double> input) {
     double xmax = 0, xmin = 0;
     for (int data = 0; data < input.size(); ++data) {
         if (xmax < input[data]) xmax = input[data];
@@ -15,6 +20,11 @@ std::vector<double> normalize_between_zero_to_one(std::vector<double> input) {
     return input;
 }
 
+/**
+ * データの加算平均が0.0，分散が1.0になるように正規化する
+ * @param input 正規化する入力データ
+ * @return 正規化後のデータ
+ */
 std::vector<double> normalize(std::vector<double> input) {
     // 一つのセットにおける平均値を求める
     double avg = 0;

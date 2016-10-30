@@ -16,9 +16,9 @@ public:
     std::string toString();
     void out(std::vector<double> input);
 private:
-    static const unsigned int MAX_TRIAL = 10000000;
-    constexpr static const double MAX_GAP = 0.1;
-    int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    static const unsigned int MAX_TRIAL = 10000000; // 学習上限回数
+    constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
+    int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN); // プロセッサのコア数
 
 
     // ニューロン数
@@ -26,8 +26,7 @@ private:
     unsigned short middleNumber = 0;
     unsigned short outputNumber = 0;
 
-    // 中間層の層数
-    unsigned short middleLayerNumber = 0;
+    unsigned short middleLayerNumber = 0; // 中間層の層数
 
     bool successFlg = true;
 
