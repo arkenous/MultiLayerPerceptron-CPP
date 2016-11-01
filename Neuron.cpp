@@ -36,7 +36,7 @@ void Neuron::learn(double delta, std::vector<double> inputValues) {
 
     // 結合荷重の更新
     for (int i = 0; i < this->inputNeuronNum; ++i) {
-        this->inputWeights[i] += this->eater * this->delta * inputValues[i];
+        this->inputWeights[i] += this->eta * this->delta * inputValues[i];
     }
 }
 
