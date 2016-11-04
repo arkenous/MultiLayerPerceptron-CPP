@@ -11,12 +11,12 @@
 
 class MultiLayerPerceptron {
 public:
-    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer);
+    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType);
     void learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer);
     std::string toString();
-    void out(std::vector<double> input);
+    double out(std::vector<double> input);
 private:
-    static const unsigned int MAX_TRIAL = 10000000; // 学習上限回数
+    static const unsigned int MAX_TRIAL = 100; // 学習上限回数
     constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
     int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN); // プロセッサのコア数
 
@@ -27,6 +27,8 @@ private:
     unsigned short outputNumber = 0;
 
     unsigned short middleLayerNumber = 0; // 中間層の層数
+
+    int middleLayerType = 0; // 中間層の活性化関数の種類指定．0: identity 1: sigmoid 2: tanh 3: ReLU
 
     bool successFlg = true;
 

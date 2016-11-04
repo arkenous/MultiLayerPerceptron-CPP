@@ -12,23 +12,25 @@
  * @param middle 中間層のニューロン数
  * @param output 出力層のニューロン数
  * @param middleLayer 中間層の層数
+ * @param middleLayerType 中間層の活性化関数の種類指定．0: identity 1: sigmoid 2: tanh 3: ReLU
  * @return
  */
-MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer) {
+MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType) {
     this->inputNumber = input;
     this->middleNumber = middle;
     this->outputNumber = output;
     this->middleLayerNumber = middleLayer;
+    this->middleLayerType = middleLayerType;
 
     for (int neuron = 0; neuron < output; ++neuron) {
-        this->outputNeurons.push_back(Neuron(inputNumber));
+        this->outputNeurons.push_back(Neuron(inputNumber, 1));
     }
 
     std::vector<Neuron> neuronPerLayer;
 
     for (int layer = 0; layer < middleLayerNumber; ++layer) {
         for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            neuronPerLayer.push_back(Neuron(inputNumber));
+            neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType));
         }
         this->middleNeurons.push_back(neuronPerLayer);
         neuronPerLayer.clear();
@@ -41,14 +43,11 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
  * @param answer 教師入力データに対応した二次元の教師出力データ，データセット * データ
  */
 void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer) {
-    std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
-    std::vector<double> o = std::vector<double>(outputNumber, 0);
+    std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0.0));
+    std::vector<double> o = std::vector<double>(outputNumber, 0.0);
 
-    int succeed = 0; //  連続正解回数のカウンタを初期化
+    int succeed = 0; // 連続正解回数のカウンタを初期化
     for (int trial = 0; trial < this->MAX_TRIAL; ++trial) {
-        std::cout << std::endl;
-        std::cout << "Trial:" << trial << std::endl;
-
         // 使用する教師データを選択
         std::vector<double> in = x[trial % answer.size()]; // 利用する教師入力データ
         std::vector<double> ans = answer[trial % answer.size()]; // 教師出力データ
@@ -56,46 +55,19 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         // 出力値を推定：1層目の中間層の出力計算
         for (int neuron = 0; neuron < this->middleNumber; ++neuron) {
             h[0][neuron] = middleNeurons[0][neuron].output(in);
-//            std::cout << "h[0][" << neuron << "]: " << h[0][neuron] << std::endl;
         }
 
         // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
         for (int layer = 1; layer < middleLayerNumber; ++layer) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 h[layer][neuron] = middleNeurons[layer][neuron].output(h[layer - 1]);
-//                std::cout << "h[" << layer << "][" << neuron << "]: " << h[layer][neuron] << std::endl;
             }
         }
 
         // 出力値を推定：中間層の最終層の出力を用いて，出力層の出力計算
         for (int neuron = 0; neuron < outputNumber; ++neuron) {
             o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
-//            std::cout << "before o[" << neuron << "]: " << o[neuron] << std::endl;
         }
-
-
-//        // 教師入力データを出力
-//        std::cout << "[input] ";
-//        for (int i = 0; i < in.size(); ++i) {
-//          std::cout << in[i] << " ";
-//        }
-//        std::cout << std::endl;
-//
-//        // 教師出力データを出力
-//        std::cout << "[answer] " << ans << std::endl;
-//
-//        // 出力層から得られたデータを出力
-//        std::cout << "[output] " << o[0] << std::endl;
-//
-//        // 中間層から得られたデータを出力
-//        for (int layer = 0; layer < middleLayerNumber; ++layer) {
-//          std::cout << "[middle " << layer << "] ";
-//          for (int neuron = 0; neuron < middleNumber; ++neuron) {
-//            std::cout << h[layer][neuron] << " ";
-//          }
-//          std::cout << std::endl;
-//        }
-
 
         successFlg = true;
 
@@ -106,10 +78,8 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         else charge = outputNumber / num_thread;
         for (int i = 0; i < outputNumber; i += charge) {
             if (i != 0 && outputNumber / i == 1) {
-//                std::cout << "i: " << i << "   outputNumber: " << outputNumber << std::endl;
                 threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(ans), std::ref(o), std::ref(h), i, outputNumber));
             } else {
-//                std::cout << "i: " << i << "   i + charge: " << i + charge << std::endl;
                 threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(ans), std::ref(o), std::ref(h), i, i + charge));
             }
         }
@@ -176,14 +146,12 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         // 1層目の中間層の出力を計算
         for (int neuron = 0; neuron < middleNumber; ++neuron) {
             h[0][neuron] = middleNeurons[0][neuron].output(in);
-//            std::cout << "h[0][" << neuron << "]: " << h[0][neuron] << std::endl;
         }
 
         // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
         for (int layer = 1; layer < middleLayerNumber; ++layer) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 h[layer][neuron] = middleNeurons[layer][neuron].output(h[layer - 1]);
-//                std::cout << "h[" << layer << "][" << neuron << "]: " << h[layer][neuron] << std::endl;
             }
         }
 
@@ -191,30 +159,10 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         // 中間層の最終層の出力を用いて，出力層の出力を計算
         for (int neuron = 0; neuron < outputNumber; ++neuron) {
             o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
-//            std::cout << "after o[" << neuron << "]: " << o[neuron] << std::endl;
         }
-
-
-//        std::cout << "[input] ";
-//        for (int i = 0; i < in.size(); ++i) {
-//          std::cout << in[i] << " ";
-//        }
-//        std::cout << std::endl;
-//
-//        std::cout << "[output] " << o[0] << std::endl;
-//
-//        for (int layer = 0; layer < middleLayerNumber; ++layer) {
-//          std::cout << "[middle " << layer << "] ";
-//          for (int i = 0; i < h[layer].size(); ++i) {
-//            std::cout << h[layer][i] << " ";
-//          }
-//          std::cout << std::endl;
-//        }
     }
 
     // 全ての教師データで正解を出すか，収束限度回数を超えた場合に終了
-//    std::cout << "[finish] " << this->toString() << std::endl;
-    std::cout << "[finish]" << std::endl;
 }
 
 /**
@@ -246,6 +194,7 @@ std::string MultiLayerPerceptron::toString() {
 
 /**
  * 出力層の学習，スレッドを用いて並列学習するため，学習するニューロンの開始点と終了点も必要
+ * 誤差関数には交差エントロピーを，活性化関数にシグモイド関数を用いるため，deltaは 出力 - 教師出力 で得られる
  * @param ans 教師出力データ
  * @param o 出力層の出力データ
  * @param h 中間層の出力データ
@@ -255,24 +204,21 @@ std::string MultiLayerPerceptron::toString() {
 void MultiLayerPerceptron::outLearnThread(const std::vector<double> ans, const std::vector<double> o,
                                           const std::vector<std::vector<double>> h, const int begin, const int end){
     for (int neuron = begin; neuron < end; ++neuron) {
-        // 出力層ニューロンの修正量deltaを計算
-        double delta = (ans[neuron] - o[neuron]) * o[neuron] * (1.0 - o[neuron]);
+        // 出力層ニューロンのdeltaの計算
+        double delta = o[neuron] - ans[neuron];
 
         // 教師データとの誤差が十分小さい場合は学習しない．そうでなければ正解フラグをfalseに
-//        std::cout << "delta: " << delta << "= (" << ans[neuron] << " - " << o[neuron] << ") * " << o[neuron] << " * (1.0 - " << o[neuron] << ")" << std::endl;
-        std::cout << "GAP: " << std::abs(ans[neuron] - o[neuron]) << std::endl;
         if (std::abs(ans[neuron] - o[neuron]) < MAX_GAP) continue;
         else successFlg = false;
 
         // 出力層の学習
-//        std::cout << "[learn] before o: " << outputNeurons[neuron].toString() << std::endl;
         outputNeurons[neuron].learn(delta, h[middleLayerNumber - 1]);
-//        std::cout << "[learn] after o: " << outputNeurons[neuron].toString() << std::endl;
     }
 }
 
 /**
  * 中間層の最終層の学習．中間層の層数が2以上の場合のみこれを使う．
+ * 活性化関数に何を使うかで，deltaの計算式が変わる
  * @param h 中間層の出力データ
  * @param begin 学習するニューロンセットの開始点
  * @param end 学習するニューロンセットの終了点
@@ -280,18 +226,26 @@ void MultiLayerPerceptron::outLearnThread(const std::vector<double> ans, const s
 void MultiLayerPerceptron::middleLastLayerLearnThread(const std::vector<std::vector<double>> h, const int begin,
                                                       const int end){
     for (int neuron = begin; neuron < end; ++neuron) {
-        // 中間層ニューロンの修正量deltaを計算
+        // 中間層ニューロンのdeltaを計算
         double sumDelta = 0.0;
         for (int k = 0; k < outputNumber; ++k) {
             Neuron n = outputNeurons[k];
             sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
         }
-        double delta = h[middleLayerNumber - 1][neuron] * (1.0 - h[middleLayerNumber - 1][neuron]) * sumDelta;
+
+        // どの活性化関数を用いるかで，deltaの計算方法が変わる
+        double delta;
+        if (middleLayerType == 0) delta = 1.0 * sumDelta;
+        else if (middleLayerType == 1) delta = (h[middleLayerNumber - 1][neuron] * (1.0 - h[middleLayerNumber - 1][neuron])) * sumDelta;
+        else if (middleLayerType == 2) delta = (1.0 - pow(h[middleLayerNumber - 1][neuron], 2)) * sumDelta;
+        else {
+            // ReLU
+            if (h[middleLayerNumber - 1][neuron] > 0) delta = 1.0 * sumDelta;
+            else delta = 0 * sumDelta;
+        }
 
         // 学習
-//        std::cout << "[learn] before m: " << middleNeurons[middleLayerNumber - 1][neuron].toString() << std::endl;
         middleNeurons[middleLayerNumber - 1][neuron].learn(delta, h[middleLayerNumber - 2]);
-//        std::cout << "[learn] after m: " << middleNeurons[middleLayerNumber - 1][neuron].toString() << std::endl;
     }
 }
 
@@ -305,18 +259,25 @@ void MultiLayerPerceptron::middleMiddleLayerLearnThread(const std::vector<std::v
                                                         const int end) {
     for (int neuron = begin; neuron < end; ++neuron) {
         for (int layer = (int)middleLayerNumber - 2; layer >= 1; --layer) {
-            // 中間層ニューロンの修正量deltaを計算
+            // 中間層ニューロンのdeltaを計算
             double sumDelta = 0.0;
             for (int k = 0; k < middleNumber; ++k) {
                 Neuron n = middleNeurons[layer + 1][k];
                 sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
             }
-            double delta = h[layer][neuron] * (1.0 - h[layer][neuron]) * sumDelta;
+
+            double delta;
+            if (middleLayerType == 0) delta = 1.0 * sumDelta;
+            else if (middleLayerType == 1) delta = (h[layer][neuron] * (1.0 - h[layer][neuron])) * sumDelta;
+            else if (middleLayerType == 2) delta = (1.0 - pow(h[layer][neuron], 2)) * sumDelta;
+            else {
+                // ReLU
+                if (h[layer][neuron] > 0) delta = 1.0 * sumDelta;
+                else delta = 0 * sumDelta;
+            }
 
             // 学習
-//                std::cout << "[learn] before m: " << middleNeurons[layer][neuron].toString() << std::endl;
             middleNeurons[layer][neuron].learn(delta, h[layer - 1]);
-//                std::cout << "[learn] after m: " << middleNeurons[layer][neuron].toString() << std::endl;
         }
     }
 }
@@ -331,7 +292,7 @@ void MultiLayerPerceptron::middleMiddleLayerLearnThread(const std::vector<std::v
 void MultiLayerPerceptron::middleFirstLayerLearnThread(const std::vector<std::vector<double>> h,
                                                        const std::vector<double> in, const int begin, const int end) {
     for (int neuron = begin; neuron < end; ++neuron) {
-        // 中間層ニューロンの修正量deltaを計算
+        // 中間層ニューロンのdeltaを計算
         double sumDelta = 0.0;
 
         if (middleLayerNumber > 1) {
@@ -345,20 +306,27 @@ void MultiLayerPerceptron::middleFirstLayerLearnThread(const std::vector<std::ve
                 sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
             }
         }
-        double delta = h[0][neuron] * (1.0 - h[0][neuron]) * sumDelta;
+
+        double delta;
+        if (middleLayerType == 0) delta = 1.0 * sumDelta;
+        else if (middleLayerType == 1) delta = (h[0][neuron] * (1.0 - h[0][neuron])) * sumDelta;
+        else if (middleLayerType == 2) delta = (1.0 - pow(h[0][neuron], 2)) * sumDelta;
+        else {
+            // ReLU
+            if (h[0][neuron] > 0) delta = 1.0 * sumDelta;
+            else delta = 0 * sumDelta;
+        }
 
         // 学習
-//            std::cout << "[learn] before m: " << middleNeurons[0][neuron].toString() << std::endl;
         middleNeurons[0][neuron].learn(delta, in);
-//            std::cout << "[learn] after m: " << middleNeurons[0][neuron].toString() << std::endl;
     }
 }
 
 /**
- * 与えられたデータをニューラルネットワークに入力し，出力をコンソールに書き出す
+ * 与えられたデータをニューラルネットワークに入力し，出力を返す
  * @param input ニューラルネットワークに入力するデータ
  */
-void MultiLayerPerceptron::out(std::vector<double> input){
+double MultiLayerPerceptron::out(std::vector<double> input){
     std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
     std::vector<double> o = std::vector<double>(outputNumber, 0);
 
@@ -380,4 +348,6 @@ void MultiLayerPerceptron::out(std::vector<double> input){
         std::cout << "output[" << neuron << "]: " << o[neuron] << " ";
     }
     std::cout << std::endl;
+
+    return o[0];
 }

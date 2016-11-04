@@ -7,5 +7,5 @@ set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 set(CMAKE_C_FLAGS_RELEASE "-Ofast")
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(SOURCE_FILES main.cpp Neuron.cpp Neuron.h MultiLayerPerceptron.cpp MultiLayerPerceptron.h)
+set(SOURCE_FILES main.cpp Neuron.cpp Neuron.h MultiLayerPerceptron.cpp MultiLayerPerceptron.h Data.h)
 add_executable(MultiLayerPerceptron_CPP ${SOURCE_FILES})

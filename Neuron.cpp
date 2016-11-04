@@ -11,14 +11,16 @@
  * @param inputNeuronNum 入力ニューロン数（入力データ数）
  * @return
  */
-Neuron::Neuron(unsigned long inputNeuronNum) {
+Neuron::Neuron(unsigned long inputNeuronNum, int activation_type) {
     this->inputNeuronNum = inputNeuronNum;
+    this->activation_type = activation_type;
     this->inputWeights.reserve(this->inputNeuronNum);
+    this->g = std::vector<double>(inputNeuronNum, 0.0);
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
     mt.seed(rnd());
     std::uniform_real_distribution<double> real_rnd(0.0, 1.0);
-    this->threshold = real_rnd(mt); // 閾値を乱数で設定
+    this->bias = real_rnd(mt); // バイアスを乱数で設定
 
     // 結合荷重をを乱数で初期化
     for (int i = 0; i < this->inputNeuronNum; ++i) {
@@ -27,17 +29,21 @@ Neuron::Neuron(unsigned long inputNeuronNum) {
 }
 
 /**
- * ニューロンの結合荷重を更新し，学習する
- * @param delta 修正量
+ * AdaGradを用いてニューロンの結合荷重を更新し，学習する
+ * @param delta 学習信号
  * @param inputValues 一つ前の層の出力データ
  */
 void Neuron::learn(double delta, std::vector<double> inputValues) {
     this->delta = delta;
-
-    // 結合荷重の更新
+    // AdaGradによる学習率で，結合荷重を更新
     for (int i = 0; i < this->inputNeuronNum; ++i) {
-        this->inputWeights[i] += this->eta * this->delta * inputValues[i];
+        this->g[i] += pow(this->delta * inputValues[i], 2);
+
+        this->inputWeights[i] -= (this->alpha / sqrt(this->g[i])) * (this->delta * inputValues[i]);
     }
+
+    // 確率的勾配降下でバイアスを更新
+    this->bias -= (this->alpha * this->delta) - (this->alpha * this->rambda * this->bias);
 }
 
 /**
@@ -46,17 +52,26 @@ void Neuron::learn(double delta, std::vector<double> inputValues) {
  * @return ニューロンの出力
  */
 double Neuron::output(std::vector<double> inputValues){
-    double sum = -this->threshold;
+    // 入力側の細胞出力の重み付き和をとる
+    double sum = this->bias;
     for (int i = 0; i < this->inputNeuronNum; ++i) {
         sum += inputValues[i] * this->inputWeights[i];
     }
 
-//    std::cout << "sum: " << sum <<std::endl;
+    // 得られた重み付き和を活性化関数に入れて出力を得る
+    if (activation_type == 0) return activation_identity(sum);
+    else if (activation_type == 1) return activation_sigmoid(sum);
+    else if (activation_type == 2) return activation_tanh(sum);
+    else return activation_relu(sum);
+}
 
-    // 活性化関数を適用し，出力値を得る
-//    std::cout << "activation(sum): " << activation_tanh(sum) << std::endl;
-
-    return activation_sigmoid(sum);
+/**
+ * 活性化関数：恒等写像
+ * @param x 入力
+ * @return 計算結果
+ */
+double Neuron::activation_identity(double x) {
+    return x;
 }
 
 /**
@@ -69,21 +84,21 @@ double Neuron::activation_sigmoid(double x){
 }
 
 /**
- * 活性化関数 : ランプ関数（ReLU）
- * @param x 入力
- * @return 計算結果
- */
-double Neuron::activation_relu(double x) {
-    return std::max(x, 0.0);
-}
-
-/**
  * 活性化関数 : tanh
  * @param x 入力
  * @return 計算結果
  */
 double Neuron::activation_tanh(double x) {
     return std::tanh(x);
+}
+
+/**
+ * 活性化関数 : ランプ関数（ReLU）
+ * @param x 入力
+ * @return 計算結果
+ */
+double Neuron::activation_relu(double x) {
+    return std::max(0.0, x);
 }
 
 /**
