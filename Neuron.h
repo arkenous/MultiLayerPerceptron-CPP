@@ -25,7 +25,7 @@ private:
     double bias = 0.0; // ニューロンのバイアス // -threshold
     double alpha = 0.3; // 学習率，AdaGradで学習率を更新する
     std::vector<double> g; // 学習率用AdaGrad．過去の勾配の二乗和を覚えておく
-    double rambda = 0.1; // 荷重減衰の定数．正の小さな定数にしておくことで勾配がゼロでも重みが減る
+    double rambda = 0.00001; // 荷重減衰の定数．正の小さな定数にしておくことで勾配がゼロでも重みが減る
     double activation_identity(double x); // 0
     double activation_sigmoid(double x); // 1
     double activation_tanh(double x); // 2
