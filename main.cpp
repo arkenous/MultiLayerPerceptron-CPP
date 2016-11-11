@@ -53,6 +53,13 @@ int main() {
                                                         (unsigned short) answer[0].size(), 1, 1);
         mlp.learn(train, answer);
 
+        std::cout << "--- NaN check ---" << std::endl;
+        while (isnan(mlp.out(train[0]))) {
+            std::cout << "is NaN" << std::endl;
+            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size(), (unsigned short) answer[0].size(), 1, 1);
+            mlp.learn(train, answer);
+        }
+
         std::cout << "----------     Success     ----------" << std::endl;
         for (int i = 0; i < test_success.size(); ++i) {
             if (mlp.out(test_success[i]) < 0.5) numSucceed += 1.0;
