@@ -39,7 +39,7 @@ void Neuron::learn(double delta, std::vector<double> inputValues) {
     for (int i = 0; i < this->inputNeuronNum; ++i) {
         this->g[i] += pow(this->delta * inputValues[i], 2);
 
-        this->inputWeights[i] -= (this->alpha / sqrt(this->g[i])) * (this->delta * inputValues[i]);
+        this->inputWeights[i] -= (this->alpha / (sqrt(this->g[i]) + this->epsilon)) * (this->delta * inputValues[i]);
     }
 
     // 確率的勾配降下でバイアスを更新
