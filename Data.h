@@ -1024,9 +1024,9 @@ std::vector<std::vector<double>> train = {
 };
 
 std::vector<std::vector<double>> answer = {
-        {0.1},
-        {0.1},
-        {0.1}
+        {0.0},
+        {0.0},
+        {0.0}
 };
 
 

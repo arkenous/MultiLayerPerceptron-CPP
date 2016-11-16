@@ -11,9 +11,10 @@
 
 class Neuron {
 public:
-    Neuron(unsigned long inputNeuronNum, int activation_type);
-    void adagrad(double delta, std::vector<double> inputValues);
+    Neuron(unsigned long inputNeuronNum, int activation_type, double dropout_ratio);
+    void dropout(double random_value);
     void learn(double delta, std::vector<double> inputValues);
+    double learn_output(std::vector<double> inputValues);
     double output(std::vector<double> inputValues);
     double getInputWeightIndexOf(int i);
     double getDelta();
@@ -39,6 +40,9 @@ private:
     std::vector<double> nu;
     std::vector<double> m_hat;
     std::vector<double> nu_hat;
+
+    double dropout_ratio; // どれくらいの割合で中間層ニューロンをDropoutさせるか
+    double dropout_mask; // Dropoutのマスク値．0.0で殺して1.0で生かす
 };
 
 #endif //MULTILAYERPERCEPTRON_CPP_NEURON_H

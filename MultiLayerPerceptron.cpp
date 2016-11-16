@@ -13,9 +13,10 @@
  * @param output 出力層のニューロン数
  * @param middleLayer 中間層の層数
  * @param middleLayerType 中間層の活性化関数の種類指定．0: identity 1: sigmoid 2: tanh 3: ReLU
+ * @param dropout_ratio Dropout率
  * @return
  */
-MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType) {
+MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_ratio) {
     this->inputNumber = input;
     this->middleNumber = middle;
     this->outputNumber = output;
@@ -23,14 +24,14 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
     this->middleLayerType = middleLayerType;
 
     for (int neuron = 0; neuron < output; ++neuron) {
-        this->outputNeurons.push_back(Neuron(inputNumber, 1));
+        this->outputNeurons.push_back(Neuron(inputNumber, 1, dropout_ratio));
     }
 
     std::vector<Neuron> neuronPerLayer;
 
     for (int layer = 0; layer < middleLayerNumber; ++layer) {
         for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType));
+            neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType, dropout_ratio));
         }
         this->middleNeurons.push_back(neuronPerLayer);
         neuronPerLayer.clear();
@@ -47,26 +48,41 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
     std::vector<double> o = std::vector<double>(outputNumber, 0.0);
 
     int succeed = 0; // 連続正解回数のカウンタを初期化
+
+    std::random_device rnd; // 非決定的乱数生成器
+    std::mt19937 mt; // メルセンヌ・ツイスタ
+    mt.seed(rnd());
+    std::uniform_real_distribution<double> real_rnd(0.0, 1.0); // 0.0以上1.0未満の範囲で値を生成する
+
     for (int trial = 0; trial < this->MAX_TRIAL; ++trial) {
+        for (int layer = 0; layer < middleLayerNumber; ++layer) {
+            for (int neuron = 0; neuron < middleNumber; ++neuron) {
+                middleNeurons[layer][neuron].dropout(real_rnd(mt));
+            }
+        }
+        for (int neuron = 0; neuron < outputNumber; ++neuron) {
+            outputNeurons[neuron].dropout(1.0); // 出力層ニューロンはDropoutさせない
+        }
+
         // 使用する教師データを選択
         std::vector<double> in = x[trial % answer.size()]; // 利用する教師入力データ
         std::vector<double> ans = answer[trial % answer.size()]; // 教師出力データ
 
         // 出力値を推定：1層目の中間層の出力計算
         for (int neuron = 0; neuron < this->middleNumber; ++neuron) {
-            h[0][neuron] = middleNeurons[0][neuron].output(in);
+            h[0][neuron] = middleNeurons[0][neuron].learn_output(in);
         }
 
         // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
         for (int layer = 1; layer < middleLayerNumber; ++layer) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
-                h[layer][neuron] = middleNeurons[layer][neuron].output(h[layer - 1]);
+                h[layer][neuron] = middleNeurons[layer][neuron].learn_output(h[layer - 1]);
             }
         }
 
         // 出力値を推定：中間層の最終層の出力を用いて，出力層の出力計算
         for (int neuron = 0; neuron < outputNumber; ++neuron) {
-            o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
+            o[neuron] = outputNeurons[neuron].learn_output(h[middleLayerNumber - 1]);
         }
 
         successFlg = true;
@@ -145,20 +161,20 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         // 出力値を推定：中間層の出力計算
         // 1層目の中間層の出力を計算
         for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            h[0][neuron] = middleNeurons[0][neuron].output(in);
+            h[0][neuron] = middleNeurons[0][neuron].learn_output(in);
         }
 
         // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
         for (int layer = 1; layer < middleLayerNumber; ++layer) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
-                h[layer][neuron] = middleNeurons[layer][neuron].output(h[layer - 1]);
+                h[layer][neuron] = middleNeurons[layer][neuron].learn_output(h[layer - 1]);
             }
         }
 
         // 出力値を推定：出力層の出力計算
         // 中間層の最終層の出力を用いて，出力層の出力を計算
         for (int neuron = 0; neuron < outputNumber; ++neuron) {
-            o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
+            o[neuron] = outputNeurons[neuron].learn_output(h[middleLayerNumber - 1]);
         }
     }
 

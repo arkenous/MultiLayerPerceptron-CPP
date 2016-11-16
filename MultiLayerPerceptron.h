@@ -11,7 +11,7 @@
 
 class MultiLayerPerceptron {
 public:
-    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType);
+    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_ratio);
     void learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer);
     std::string toString();
     double out(std::vector<double> input);

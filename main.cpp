@@ -36,6 +36,7 @@ std::vector<double> normalize(std::vector<double> input) {
 
 int main() {
     double numSucceed = 0.0;
+    double dropout_ratio = 0.5;
     for (int loop = 0; loop < 100; ++loop) {
 
         for (int i = 0; i < train.size(); ++i) {
@@ -50,13 +51,13 @@ int main() {
 
         MultiLayerPerceptron mlp = MultiLayerPerceptron((unsigned short) train[0].size(),
                                                         (unsigned short) train[0].size(),
-                                                        (unsigned short) answer[0].size(), 1, 1);
+                                                        (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
         mlp.learn(train, answer);
 
         std::cout << "--- NaN check ---" << std::endl;
         while (isnan(mlp.out(train[0]))) {
             std::cout << "is NaN" << std::endl;
-            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size(), (unsigned short) answer[0].size(), 1, 1);
+            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size(), (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
             mlp.learn(train, answer);
         }
 
