@@ -15,7 +15,6 @@ Neuron::Neuron(unsigned long inputNeuronNum, int activation_type) {
     this->inputNeuronNum = inputNeuronNum;
     this->activation_type = activation_type;
     this->inputWeights.reserve(this->inputNeuronNum);
-    this->g = std::vector<double>(inputNeuronNum, 0.0);
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
     mt.seed(rnd());
@@ -26,20 +25,31 @@ Neuron::Neuron(unsigned long inputNeuronNum, int activation_type) {
     for (int i = 0; i < this->inputNeuronNum; ++i) {
         this->inputWeights.push_back(real_rnd(mt));
     }
+
+    // Adamのイテレーションカウント変数を0で初期化する（learnの最初にインクリメント）
+    this->iteration = 0;
+    this->m = std::vector<double>(inputNeuronNum, 0.0);
+    this->nu = std::vector<double>(inputNeuronNum, 0.0);
+    this->m_hat = std::vector<double>(inputNeuronNum, 0.0);
+    this->nu_hat = std::vector<double>(inputNeuronNum, 0.0);
 }
 
 /**
- * AdaGradを用いてニューロンの結合荷重を更新し，学習する
- * @param delta 学習信号
+ * Adamを用いてニューロンの結合荷重を学習し，確率的勾配降下でバイアスを更新する
+ * @param delta 損失関数を偏微分したもの（これに一つ前の層の出力データを掛けて傾きを得る）
  * @param inputValues 一つ前の層の出力データ
  */
-void Neuron::learn(double delta, std::vector<double> inputValues) {
+void Neuron::learn(double delta, std::vector<double> inputValues){
     this->delta = delta;
-    // AdaGradによる学習率で，結合荷重を更新
-    for (int i = 0; i < this->inputNeuronNum; ++i) {
-        this->g[i] += pow(this->delta * inputValues[i], 2);
 
-        this->inputWeights[i] -= (this->alpha / (sqrt(this->g[i]) + this->epsilon)) * (this->delta * inputValues[i]);
+    // Adamを用いて重み付けを学習する
+    this->iteration += 1;
+    for (int i = 0; i < this->inputNeuronNum; ++i) {
+        this->m[i] = this->beta_one * this->m[i] + (1 - this->beta_one) * (this->delta * inputValues[i]);
+        this->nu[i] = this->beta_two * this->nu[i] + (1 - this->beta_two) * pow((this->delta * inputValues[i]), 2);
+        this->m_hat[i] = this->m[i] / (1 - pow(this->beta_one, this->iteration));
+        this->nu_hat[i] = sqrt(this->nu[i] / (1 - pow(this->beta_two, this->iteration))) + this->epsilon;
+        this->inputWeights[i] -= this->alpha * (this->m_hat[i] / this->nu_hat[i]);
     }
 
     // 確率的勾配降下でバイアスを更新
