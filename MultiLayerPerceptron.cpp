@@ -23,18 +23,26 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
     this->middleLayerNumber = middleLayer;
     this->middleLayerType = middleLayerType;
 
-    for (int neuron = 0; neuron < output; ++neuron) {
-        this->outputNeurons.push_back(Neuron(inputNumber, 1, dropout_ratio));
-    }
-
     std::vector<Neuron> neuronPerLayer;
 
     for (int layer = 0; layer < middleLayerNumber; ++layer) {
-        for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType, dropout_ratio));
+        if (layer == 0) {
+            for (int neuron = 0; neuron < middleNumber; ++neuron) {
+                // 中間層の最初の層については，入力層のニューロン数がニューロンへの入力数となる
+                neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType, dropout_ratio));
+            }
+        } else {
+            for (int neuron = 0; neuron < middleNumber; ++neuron) {
+                // それ以降の層については，中間層の各層のニューロン数がニューロンへの入力数となる
+                neuronPerLayer.push_back(Neuron(middleNumber, middleLayerType, dropout_ratio));
+            }
         }
         this->middleNeurons.push_back(neuronPerLayer);
         neuronPerLayer.clear();
+    }
+
+    for (int neuron = 0; neuron < output; ++neuron) {
+        this->outputNeurons.push_back(Neuron(middleNumber, 1, dropout_ratio));
     }
 }
 

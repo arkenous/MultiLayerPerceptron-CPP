@@ -8,14 +8,14 @@
 
 /**
  * Neuronのコンストラクタ
- * @param inputNeuronNum 入力ニューロン数（入力データ数）
+ * @param inputNum 入力ニューロン数（入力データ数）
  * @param dropout_ratio Dropout率
  * @return
  */
-Neuron::Neuron(unsigned long inputNeuronNum, int activation_type, double dropout_ratio) {
-    this->inputNeuronNum = inputNeuronNum;
+Neuron::Neuron(unsigned long inputNum, int activation_type, double dropout_ratio) {
+    this->inputNum = inputNum; // このニューロンへの入力数（前の層のニューロン数）
     this->activation_type = activation_type;
-    this->inputWeights.reserve(this->inputNeuronNum);
+    this->inputWeights.reserve(this->inputNum);
     this->dropout_ratio = dropout_ratio;
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
@@ -24,16 +24,16 @@ Neuron::Neuron(unsigned long inputNeuronNum, int activation_type, double dropout
     this->bias = real_rnd(mt); // バイアスを乱数で設定
 
     // 結合荷重をを乱数で初期化
-    for (int i = 0; i < this->inputNeuronNum; ++i) {
+    for (int i = 0; i < this->inputNum; ++i) {
         this->inputWeights.push_back(real_rnd(mt));
     }
 
     // Adamのイテレーションカウント変数を0で初期化する（learnの最初にインクリメント）
     this->iteration = 0;
-    this->m = std::vector<double>(inputNeuronNum, 0.0);
-    this->nu = std::vector<double>(inputNeuronNum, 0.0);
-    this->m_hat = std::vector<double>(inputNeuronNum, 0.0);
-    this->nu_hat = std::vector<double>(inputNeuronNum, 0.0);
+    this->m = std::vector<double>(inputNum, 0.0);
+    this->nu = std::vector<double>(inputNum, 0.0);
+    this->m_hat = std::vector<double>(inputNum, 0.0);
+    this->nu_hat = std::vector<double>(inputNum, 0.0);
 }
 
 /**
@@ -56,7 +56,7 @@ void Neuron::learn(double delta, std::vector<double> inputValues){
     // Adamを用いて重み付けを学習する
     if (this->dropout_mask == 1.0) {
         this->iteration += 1;
-        for (int i = 0; i < this->inputNeuronNum; ++i) {
+        for (int i = 0; i < this->inputNum; ++i) {
             this->m[i] = this->beta_one * this->m[i] + (1 - this->beta_one) * (this->delta * inputValues[i]);
             this->nu[i] = this->beta_two * this->nu[i] + (1 - this->beta_two) * pow((this->delta * inputValues[i]), 2);
             this->m_hat[i] = this->m[i] / (1 - pow(this->beta_one, this->iteration));
@@ -76,7 +76,7 @@ void Neuron::learn(double delta, std::vector<double> inputValues){
  */
 double Neuron::output(std::vector<double> inputValues) {
     double sum = this->bias * this->dropout_ratio;
-    for (int i = 0; i < this->inputNeuronNum; ++i) {
+    for (int i = 0; i < this->inputNum; ++i) {
         sum += inputValues[i] * (this->inputWeights[i] * this->dropout_ratio);
     }
 
@@ -97,7 +97,7 @@ double Neuron::output(std::vector<double> inputValues) {
 double Neuron::learn_output(std::vector<double> inputValues){
     // 入力側の細胞出力の重み付き和をとる
     double sum = this->bias;
-    for (int i = 0; i < this->inputNeuronNum; ++i) {
+    for (int i = 0; i < this->inputNum; ++i) {
         sum += inputValues[i] * this->inputWeights[i];
     }
 
@@ -171,7 +171,7 @@ double Neuron::getDelta() {
 std::string Neuron::toString() {
     std::stringstream ss;
     ss << "weight : ";
-    for (int neuron = 0; neuron < inputNeuronNum; ++neuron) {
+    for (int neuron = 0; neuron < inputNum; ++neuron) {
         ss << inputWeights[neuron] << " , ";
     }
 
