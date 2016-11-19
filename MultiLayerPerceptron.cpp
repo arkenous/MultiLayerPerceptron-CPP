@@ -52,8 +52,8 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
  * @param answer 教師入力データに対応した二次元の教師出力データ，データセット * データ
  */
 void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer) {
-    std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0.0));
-    std::vector<double> o = std::vector<double>(outputNumber, 0.0);
+    h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0.0));
+    o = std::vector<double>(outputNumber, 0.0);
 
     int succeed = 0; // 連続正解回数のカウンタを初期化
 
@@ -77,27 +77,52 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         std::vector<double> ans = answer[trial % answer.size()]; // 教師出力データ
 
         // 出力値を推定：1層目の中間層の出力計算
-        for (int neuron = 0; neuron < this->middleNumber; ++neuron) {
-            h[0][neuron] = middleNeurons[0][neuron].learn_output(in);
+        std::vector<std::thread> threads;
+        int charge = 1;
+        threads.clear();
+        if (middleNumber <= num_thread) charge = 1;
+        else charge = middleNumber / num_thread;
+        for (int i = 0; i < middleNumber; i += charge) {
+            if (i != 0 && middleNumber / i == 1) {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerForwardThread, this, std::ref(in), i, middleNumber));
+            } else {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerForwardThread, this, std::ref(in), i, i + charge));
+            }
         }
+        for (std::thread &th : threads) th.join();
 
         // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
-        for (int layer = 1; layer < middleLayerNumber; ++layer) {
-            for (int neuron = 0; neuron < middleNumber; ++neuron) {
-                h[layer][neuron] = middleNeurons[layer][neuron].learn_output(h[layer - 1]);
+        if (middleNumber <= num_thread) charge = 1;
+        else charge = middleNumber / num_thread;
+        for (int layer = 1; layer <= (int)middleLayerNumber - 1; ++layer) {
+            threads.clear();
+            for (int i = 0; i < middleNumber; i += charge) {
+                if (i != 0 && middleNumber / i == 1) {
+                    threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerForwardThread, this, layer, i, middleNumber));
+                } else {
+                    threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerForwardThread, this, layer, i, i + charge));
+                }
             }
+            for (std::thread &th : threads) th.join();
         }
 
         // 出力値を推定：中間層の最終層の出力を用いて，出力層の出力計算
-        for (int neuron = 0; neuron < outputNumber; ++neuron) {
-            o[neuron] = outputNeurons[neuron].learn_output(h[middleLayerNumber - 1]);
+        threads.clear();
+        if (outputNumber <= num_thread) charge = 1;
+        else charge = outputNumber / num_thread;
+        for (int i = 0; i < outputNumber; i += charge) {
+            if (i != 0 && outputNumber / i == 1) {
+                threads.push_back(std::thread(&MultiLayerPerceptron::outForwardThread, this, i, outputNumber));
+            } else {
+                threads.push_back(std::thread(&MultiLayerPerceptron::outForwardThread, this, i, i + charge));
+            }
         }
+        for (std::thread &th : threads) th.join();
 
         successFlg = true;
 
         //region 出力層を学習する
-        std::vector<std::thread> threads;
-        int charge = 1;
+        threads.clear();
         if (outputNumber <= num_thread) charge = 1;
         else charge = outputNumber / num_thread;
         for (int i = 0; i < outputNumber; i += charge) {
@@ -136,17 +161,23 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         //endregion
 
         //region 出力層と入力層に最も近い層一つずつを除いた残りの中間層を入力層に向けて学習する
-        threads.clear();
         if (middleNumber <= num_thread) charge = 1;
         else charge = middleNumber / num_thread;
-        for (int i = 0; i < middleNumber; i += charge) {
-            if (i != 0 && middleNumber / i == 1) {
-                threads.push_back(std::thread(&MultiLayerPerceptron::middleMiddleLayerLearnThread, this, std::ref(h), i, middleNumber));
-            } else {
-                threads.push_back(std::thread(&MultiLayerPerceptron::middleMiddleLayerLearnThread, this, std::ref(h), i, i + charge));
+        for (int layer = (int)middleLayerNumber - 2; layer >= 1; --layer) {
+            threads.clear();
+            for (int i = 0; i < middleNumber; i += charge) {
+                if (i != 0 && middleNumber / i == 1) {
+                    threads.push_back(
+                            std::thread(&MultiLayerPerceptron::middleMiddleLayerLearnThread, this, std::ref(h), layer, i,
+                                        middleNumber));
+                } else {
+                    threads.push_back(
+                            std::thread(&MultiLayerPerceptron::middleMiddleLayerLearnThread, this, std::ref(h), layer, i,
+                                        i + charge));
+                }
             }
+            for (std::thread &th : threads) th.join();
         }
-        for (std::thread &th : threads) th.join();
         //endregion
 
         //region 中間層の最初の層を学習する
@@ -166,24 +197,46 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         //endregion
 
         // 再度出力
-        // 出力値を推定：中間層の出力計算
-        // 1層目の中間層の出力を計算
-        for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            h[0][neuron] = middleNeurons[0][neuron].learn_output(in);
-        }
-
-        // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
-        for (int layer = 1; layer < middleLayerNumber; ++layer) {
-            for (int neuron = 0; neuron < middleNumber; ++neuron) {
-                h[layer][neuron] = middleNeurons[layer][neuron].learn_output(h[layer - 1]);
+        // 出力値を推定：1層目の中間層の出力計算
+        threads.clear();
+        if (middleNumber <= num_thread) charge = 1;
+        else charge = middleNumber / num_thread;
+        for (int i = 0; i < middleNumber; i += charge) {
+            if (i != 0 && middleNumber / i == 1) {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerForwardThread, this, std::ref(in), i, middleNumber));
+            } else {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerForwardThread, this, std::ref(in), i, i + charge));
             }
         }
+        for (std::thread &th : threads) th.join();
 
-        // 出力値を推定：出力層の出力計算
-        // 中間層の最終層の出力を用いて，出力層の出力を計算
-        for (int neuron = 0; neuron < outputNumber; ++neuron) {
-            o[neuron] = outputNeurons[neuron].learn_output(h[middleLayerNumber - 1]);
+        // 一つ前の中間層より得られた出力を用いて，以降の中間層を順に計算
+        if (middleNumber <= num_thread) charge = 1;
+        else charge = middleNumber / num_thread;
+        for (int layer = 1; layer <= (int)middleLayerNumber - 1; ++layer) {
+            threads.clear();
+            for (int i = 0; i < middleNumber; i += charge) {
+                if (i != 0 && middleNumber / i == 1) {
+                    threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerForwardThread, this, layer, i, middleNumber));
+                } else {
+                    threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerForwardThread, this, layer, i, i + charge));
+                }
+            }
+            for (std::thread &th : threads) th.join();
         }
+
+        // 出力値を推定：中間層の最終層の出力を用いて，出力層の出力計算
+        threads.clear();
+        if (outputNumber <= num_thread) charge = 1;
+        else charge = outputNumber / num_thread;
+        for (int i = 0; i < outputNumber; i += charge) {
+            if (i != 0 && outputNumber / i == 1) {
+                threads.push_back(std::thread(&MultiLayerPerceptron::outForwardThread, this, i, outputNumber));
+            } else {
+                threads.push_back(std::thread(&MultiLayerPerceptron::outForwardThread, this, i, i + charge));
+            }
+        }
+        for (std::thread &th : threads) th.join();
     }
 
     // 全ての教師データで正解を出すか，収束限度回数を超えた場合に終了
@@ -214,6 +267,26 @@ std::string MultiLayerPerceptron::toString() {
     str += ") ";
 
     return str;
+}
+
+void MultiLayerPerceptron::middleFirstLayerForwardThread(const std::vector<double> in, const int begin,
+                                                         const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        h[0][neuron] = middleNeurons[0][neuron].learn_output(in);
+    }
+}
+
+void MultiLayerPerceptron::middleLayerForwardThread(const int layer,
+                                                          const int begin, const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        h[layer][neuron] = middleNeurons[layer][neuron].learn_output(h[layer - 1]);
+    }
+}
+
+void MultiLayerPerceptron::outForwardThread(const int begin, const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        o[neuron] = outputNeurons[neuron].learn_output(h[middleLayerNumber - 1]);
+    }
 }
 
 /**
@@ -282,30 +355,28 @@ void MultiLayerPerceptron::middleLastLayerLearnThread(const std::vector<std::vec
  * @param begin 学習するニューロンセットの開始点
  * @param end 学習するニューロンセットの終了点
  */
-void MultiLayerPerceptron::middleMiddleLayerLearnThread(const std::vector<std::vector<double>> h, const int begin,
+void MultiLayerPerceptron::middleMiddleLayerLearnThread(const std::vector<std::vector<double>> h, const int layer, const int begin,
                                                         const int end) {
     for (int neuron = begin; neuron < end; ++neuron) {
-        for (int layer = (int)middleLayerNumber - 2; layer >= 1; --layer) {
-            // 中間層ニューロンのdeltaを計算
-            double sumDelta = 0.0;
-            for (int k = 0; k < middleNumber; ++k) {
-                Neuron n = middleNeurons[layer + 1][k];
-                sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
-            }
-
-            double delta;
-            if (middleLayerType == 0) delta = 1.0 * sumDelta;
-            else if (middleLayerType == 1) delta = (h[layer][neuron] * (1.0 - h[layer][neuron])) * sumDelta;
-            else if (middleLayerType == 2) delta = (1.0 - pow(h[layer][neuron], 2)) * sumDelta;
-            else {
-                // ReLU
-                if (h[layer][neuron] > 0) delta = 1.0 * sumDelta;
-                else delta = 0 * sumDelta;
-            }
-
-            // 学習
-            middleNeurons[layer][neuron].learn(delta, h[layer - 1]);
+        // 中間層ニューロンのdeltaを計算
+        double sumDelta = 0.0;
+        for (int k = 0; k < middleNumber; ++k) {
+            Neuron n = middleNeurons[layer + 1][k];
+            sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
         }
+
+        double delta;
+        if (middleLayerType == 0) delta = 1.0 * sumDelta;
+        else if (middleLayerType == 1) delta = (h[layer][neuron] * (1.0 - h[layer][neuron])) * sumDelta;
+        else if (middleLayerType == 2) delta = (1.0 - pow(h[layer][neuron], 2)) * sumDelta;
+        else {
+            // ReLU
+            if (h[layer][neuron] > 0) delta = 1.0 * sumDelta;
+            else delta = 0 * sumDelta;
+        }
+
+        // 学習
+        middleNeurons[layer][neuron].learn(delta, h[layer - 1]);
     }
 }
 
