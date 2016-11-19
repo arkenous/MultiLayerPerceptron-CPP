@@ -55,7 +55,7 @@ int main() {
         mlp.learn(train, answer);
 
         std::cout << "--- NaN check ---" << std::endl;
-        while (isnan(mlp.out(train[0]))) {
+        while (isnan(mlp.out(train[0], true)[0])) {
             std::cout << "is NaN" << std::endl;
             mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size(), (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
             mlp.learn(train, answer);
@@ -63,11 +63,11 @@ int main() {
 
         std::cout << "----------     Success     ----------" << std::endl;
         for (int i = 0; i < test_success.size(); ++i) {
-            if (mlp.out(test_success[i]) < 0.5) numSucceed += 1.0;
+            if (mlp.out(test_success[i], true)[0] < 0.5) numSucceed += 1.0;
         }
         std::cout << "----------     Fail     ----------" << std::endl;
         for (int i = 0; i < test_fail.size(); ++i) {
-            if (mlp.out(test_fail[i]) >= 0.5) numSucceed += 1.0;
+            if (mlp.out(test_fail[i], true)[0] >= 0.5) numSucceed += 1.0;
         }
 
     }

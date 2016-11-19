@@ -102,9 +102,9 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         else charge = outputNumber / num_thread;
         for (int i = 0; i < outputNumber; i += charge) {
             if (i != 0 && outputNumber / i == 1) {
-                threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(ans), std::ref(o), std::ref(h), i, outputNumber));
+                threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(in), std::ref(ans), std::ref(o), std::ref(h), i, outputNumber));
             } else {
-                threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(ans), std::ref(o), std::ref(h), i, i + charge));
+                threads.push_back(std::thread(&MultiLayerPerceptron::outLearnThread, this, std::ref(in), std::ref(ans), std::ref(o), std::ref(h), i, i + charge));
             }
         }
         for (std::thread &th : threads) th.join();
@@ -219,20 +219,23 @@ std::string MultiLayerPerceptron::toString() {
 /**
  * 出力層の学習，スレッドを用いて並列学習するため，学習するニューロンの開始点と終了点も必要
  * 誤差関数には交差エントロピーを，活性化関数にシグモイド関数を用いるため，deltaは 出力 - 教師出力 で得られる
+ * @param in 入力データ
  * @param ans 教師出力データ
  * @param o 出力層の出力データ
  * @param h 中間層の出力データ
  * @param begin 学習するニューロンセットの開始点
  * @param end 学習するニューロンセットの終了点
  */
-void MultiLayerPerceptron::outLearnThread(const std::vector<double> ans, const std::vector<double> o,
+void MultiLayerPerceptron::outLearnThread(const std::vector<double> in, const std::vector<double> ans, const std::vector<double> o,
                                           const std::vector<std::vector<double>> h, const int begin, const int end){
+    // Dropoutを用いた学習済みNNの出力を得るようにする
+    std::vector<double> output = this->out(in, false);
     for (int neuron = begin; neuron < end; ++neuron) {
         // 出力層ニューロンのdeltaの計算
         double delta = o[neuron] - ans[neuron];
 
         // 教師データとの誤差が十分小さい場合は学習しない．そうでなければ正解フラグをfalseに
-        if (std::abs(ans[neuron] - o[neuron]) < MAX_GAP) continue;
+        if (std::abs(ans[neuron] - output[neuron]) < MAX_GAP) continue;
         else successFlg = false;
 
         // 出力層の学習
@@ -349,8 +352,9 @@ void MultiLayerPerceptron::middleFirstLayerLearnThread(const std::vector<std::ve
 /**
  * 与えられたデータをニューラルネットワークに入力し，出力を返す
  * @param input ニューラルネットワークに入力するデータ
+ * @param showResult 結果をコンソールに出力するかを指定する
  */
-double MultiLayerPerceptron::out(std::vector<double> input){
+std::vector<double> MultiLayerPerceptron::out(std::vector<double> input, bool showResult){
     std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
     std::vector<double> o = std::vector<double>(outputNumber, 0);
 
@@ -368,10 +372,12 @@ double MultiLayerPerceptron::out(std::vector<double> input){
         o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
     }
 
-    for (int neuron = 0; neuron < outputNumber; ++neuron) {
-        std::cout << "output[" << neuron << "]: " << o[neuron] << " ";
+    if (showResult) {
+        for (int neuron = 0; neuron < outputNumber; ++neuron) {
+            std::cout << "output[" << neuron << "]: " << o[neuron] << " ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 
-    return o[0];
+    return o;
 }

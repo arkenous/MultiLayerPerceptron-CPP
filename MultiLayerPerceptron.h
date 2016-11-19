@@ -14,7 +14,7 @@ public:
     MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_ratio);
     void learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer);
     std::string toString();
-    double out(std::vector<double> input);
+    std::vector<double> out(std::vector<double> input, bool showResult);
 private:
     static const unsigned int MAX_TRIAL = 100000; // 学習上限回数
     constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
@@ -35,7 +35,7 @@ private:
     std::vector<std::vector<Neuron>> middleNeurons; // 中間層は複数層用意する
     std::vector<Neuron> outputNeurons;
 
-    void outLearnThread(const std::vector<double> ans, const std::vector<double> o,
+    void outLearnThread(const std::vector<double> in, const std::vector<double> ans, const std::vector<double> o,
                         const std::vector<std::vector<double>> h, const int begin, const int end);
     void middleLastLayerLearnThread(const std::vector<std::vector<double>> h, const int begin, const int end);
     void middleMiddleLayerLearnThread(const std::vector<std::vector<double>> h, const int begin, const int end);

@@ -75,9 +75,9 @@ void Neuron::learn(double delta, std::vector<double> inputValues){
  * @return ニューロンの出力値（活性化関数より得られた値）
  */
 double Neuron::output(std::vector<double> inputValues) {
-    double sum = this->bias * this->dropout_ratio;
+    double sum = this->bias * (1.0 - this->dropout_ratio);
     for (int i = 0; i < this->inputNum; ++i) {
-        sum += inputValues[i] * (this->inputWeights[i] * this->dropout_ratio);
+        sum += inputValues[i] * (this->inputWeights[i] * (1.0 - this->dropout_ratio));
     }
 
     double activated;
