@@ -35,45 +35,50 @@ std::vector<double> normalize(std::vector<double> input) {
 }
 
 int main() {
-    double numSucceed = 0.0;
-    double dropout_ratio = 0.5;
+    double dropout_ratio = 0.0;
+    std::random_device rnd;
+    std::mt19937 mt;
+    mt.seed(rnd());
+
+    for (int i = 0; i < test_success.size(); ++i) {
+        test_success[i] = normalize(test_success[i]);
+    }
+    for (int i = 0; i < test_fail.size(); ++i) {
+        test_fail[i] = normalize(test_fail[i]);
+    }
+
     for (int loop = 0; loop < 100; ++loop) {
-
-        for (int i = 0; i < train.size(); ++i) {
-            train[i] = normalize(train[i]);
-        }
-        for (int i = 0; i < test_success.size(); ++i) {
-            test_success[i] = normalize(test_success[i]);
-        }
-        for (int i = 0; i < test_fail.size(); ++i) {
-            test_fail[i] = normalize(test_fail[i]);
-        }
-
-        MultiLayerPerceptron mlp = MultiLayerPerceptron((unsigned short) train[0].size(),
-                                                        (unsigned short) train[0].size(),
+        MultiLayerPerceptron mlp = MultiLayerPerceptron((unsigned short) test_success[0].size(),
+                                                        (unsigned short) test_success[0].size() * 2,
                                                         (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
+
+        // test_successのシャッフル
+        std::shuffle(test_success.begin(), test_success.end(), mt);
+
+        std::vector<std::vector<double>> train;
+        train.push_back(test_success[0]);
+        train.push_back(test_success[1]);
+        train.push_back(test_success[2]);
+
         mlp.learn(train, answer);
 
         std::cout << "--- NaN check ---" << std::endl;
         while (isnan(mlp.out(train[0], true)[0])) {
             std::cout << "is NaN" << std::endl;
-            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size(), (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
+            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size() * 2, (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
             mlp.learn(train, answer);
         }
 
         std::cout << "----------     Success     ----------" << std::endl;
-        for (int i = 0; i < test_success.size(); ++i) {
-            if (mlp.out(test_success[i], true)[0] < 0.5) numSucceed += 1.0;
+        for (int i = 3; i < test_success.size(); ++i) {
+            mlp.out(test_success[i], true);
         }
         std::cout << "----------     Fail     ----------" << std::endl;
         for (int i = 0; i < test_fail.size(); ++i) {
-            if (mlp.out(test_fail[i], true)[0] >= 0.5) numSucceed += 1.0;
+            mlp.out(test_fail[i], true);
         }
-
     }
 
-    double percentage = (numSucceed / 1000.0) * 100.0;
-    std::cout << "正答率: " << percentage << "%" << std::endl;
     return 0;
 }
 
