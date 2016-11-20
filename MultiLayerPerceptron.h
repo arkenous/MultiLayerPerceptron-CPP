@@ -16,7 +16,7 @@ public:
     std::string toString();
     std::vector<double> out(std::vector<double> input, bool showResult);
 private:
-    static const unsigned int MAX_TRIAL = 5000; // 学習上限回数
+    static const unsigned int MAX_TRIAL = 10000; // 学習上限回数
     constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
     int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN); // プロセッサのコア数
 
@@ -37,6 +37,9 @@ private:
     std::vector<std::vector<double>> h;
     std::vector<double> o;
 
+    std::vector<std::vector<double>> learnedH;
+    std::vector<double> learnedO;
+
     void middleFirstLayerForwardThread(const std::vector<double> in, const int begin, const int end);
     void middleLayerForwardThread(const int layer, const int begin, const int end);
     void outForwardThread(const int begin, const int end);
@@ -45,6 +48,9 @@ private:
     void middleLastLayerLearnThread(const std::vector<std::vector<double>> h, const int begin, const int end);
     void middleMiddleLayerLearnThread(const std::vector<std::vector<double>> h, const int layer, const int begin, const int end);
     void middleFirstLayerLearnThread(const std::vector<std::vector<double>> h, const std::vector<double> in, const int begin, const int end);
+    void middleFirstLayerOutThread(const std::vector<double> in, const int begin, const int end);
+    void middleLayerOutThread(const int layer, const int begin, const int end);
+    void outOutThread(const int begin, const int end);
 };
 
 

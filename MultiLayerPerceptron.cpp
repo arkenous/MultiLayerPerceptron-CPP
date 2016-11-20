@@ -426,29 +426,73 @@ void MultiLayerPerceptron::middleFirstLayerLearnThread(const std::vector<std::ve
  * @param showResult 結果をコンソールに出力するかを指定する
  */
 std::vector<double> MultiLayerPerceptron::out(std::vector<double> input, bool showResult){
-    std::vector<std::vector<double>> h = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
-    std::vector<double> o = std::vector<double>(outputNumber, 0);
+    learnedH = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
+    learnedO = std::vector<double>(outputNumber, 0);
 
-    for (int neuron = 0; neuron < middleNumber; ++neuron) {
-        h[0][neuron] = middleNeurons[0][neuron].output(input);
-    }
-
-    for (int layer = 1; layer < middleLayerNumber; ++layer) {
-        for (int neuron = 0; neuron < middleNumber; ++neuron) {
-            h[layer][neuron] = middleNeurons[layer][neuron].output(h[layer - 1]);
+    std::vector<std::thread> threads;
+    int charge = 1;
+    threads.clear();
+    if (middleNumber <= num_thread) charge = 1;
+    else charge = middleNumber / num_thread;
+    for (int i = 0; i < middleNumber;  i += charge) {
+        if (i != 0 && middleNumber / i == 1) {
+            threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerOutThread, this, std::ref(input), i, middleNumber));
+        } else {
+            threads.push_back(std::thread(&MultiLayerPerceptron::middleFirstLayerOutThread, this, std::ref(input), i, i + charge));
         }
     }
+    for (std::thread &th : threads) th.join();
 
-    for (int neuron = 0; neuron < outputNumber; ++neuron) {
-        o[neuron] = outputNeurons[neuron].output(h[middleLayerNumber - 1]);
+    if (middleNumber <= num_thread) charge = 1;
+    else charge = middleNumber / num_thread;
+    for (int layer = 1; layer <= (int)middleLayerNumber - 1; ++layer) {
+        threads.clear();
+        for (int i = 0; i < middleNumber; i += charge) {
+            if (i != 0 && middleNumber / i == 1) {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerOutThread, this, layer, i, middleNumber));
+            } else {
+                threads.push_back(std::thread(&MultiLayerPerceptron::middleLayerOutThread, this, layer, i, i + charge));
+            }
+        }
+        for (std::thread &th : threads) th.join();
     }
+
+    threads.clear();
+    if (outputNumber <= num_thread) charge = 1;
+    else charge = outputNumber / num_thread;
+    for (int i = 0; i < outputNumber; i += charge) {
+        if (i != 0 && outputNumber / i == 1) {
+            threads.push_back(std::thread(&MultiLayerPerceptron::outOutThread, this, i, outputNumber));
+        } else {
+            threads.push_back(std::thread(&MultiLayerPerceptron::outOutThread, this, i, i + charge));
+        }
+    }
+    for (std::thread &th : threads) th.join();
 
     if (showResult) {
         for (int neuron = 0; neuron < outputNumber; ++neuron) {
-            std::cout << "output[" << neuron << "]: " << o[neuron] << " ";
+            std::cout << "output[" << neuron << "]: " << learnedO[neuron] << " ";
         }
         std::cout << std::endl;
     }
 
-    return o;
+    return learnedO;
+}
+
+void MultiLayerPerceptron::middleFirstLayerOutThread(const std::vector<double> in, const int begin, const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        learnedH[0][neuron] = middleNeurons[0][neuron].output(in);
+    }
+}
+
+void MultiLayerPerceptron::middleLayerOutThread(const int layer, const int begin, const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        learnedH[layer][neuron] = middleNeurons[layer][neuron].output(learnedH[layer - 1]);
+    }
+}
+
+void MultiLayerPerceptron::outOutThread(const int begin, const int end) {
+    for (int neuron = begin; neuron < end; ++neuron) {
+        learnedO[neuron] = outputNeurons[neuron].output(learnedH[middleLayerNumber - 1]);
+    }
 }
