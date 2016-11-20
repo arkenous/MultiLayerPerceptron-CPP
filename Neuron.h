@@ -11,7 +11,8 @@
 
 class Neuron {
 public:
-    Neuron(unsigned long inputNum, int activation_type, double dropout_ratio);
+    Neuron();
+    Neuron(unsigned short inputNum, int activation_type, double dropout_ratio);
     void dropout(double random_value);
     void learn(double delta, std::vector<double> inputValues);
     double learn_output(std::vector<double> inputValues);
@@ -20,7 +21,7 @@ public:
     double getDelta();
     std::string toString();
 private:
-    unsigned long inputNum = 0;
+    unsigned short inputNum = 0;
     int activation_type = 0;
     std::vector<double> inputWeights;
     double delta = 0.0; // 修正量

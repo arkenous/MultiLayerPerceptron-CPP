@@ -7,15 +7,21 @@
 #include "Neuron.h"
 
 /**
+ * vectorのサイズ確保のためだけに用いるNeuronのデフォルトコンストラクタ
+ * @return Neuronのインスタンス
+ */
+Neuron::Neuron() {}
+
+/**
  * Neuronのコンストラクタ
  * @param inputNum 入力ニューロン数（入力データ数）
  * @param dropout_ratio Dropout率
- * @return
+ * @return Neuronのインスタンス
  */
-Neuron::Neuron(unsigned long inputNum, int activation_type, double dropout_ratio) {
+Neuron::Neuron(unsigned short inputNum, int activation_type, double dropout_ratio) {
     this->inputNum = inputNum; // このニューロンへの入力数（前の層のニューロン数）
     this->activation_type = activation_type;
-    this->inputWeights.reserve(this->inputNum);
+    this->inputWeights.resize(this->inputNum);
     this->dropout_ratio = dropout_ratio;
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
@@ -25,7 +31,7 @@ Neuron::Neuron(unsigned long inputNum, int activation_type, double dropout_ratio
 
     // 結合荷重をを乱数で初期化
     for (int i = 0; i < this->inputNum; ++i) {
-        this->inputWeights.push_back(real_rnd(mt));
+        this->inputWeights[i] = real_rnd(mt);
     }
 
     // Adamのイテレーションカウント変数を0で初期化する（learnの最初にインクリメント）

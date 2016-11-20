@@ -3,6 +3,7 @@
 //
 
 #include "MultiLayerPerceptron.h"
+#include "Neuron.h"
 #include "iostream"
 #include <thread>
 
@@ -23,26 +24,29 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
     this->middleLayerNumber = middleLayer;
     this->middleLayerType = middleLayerType;
 
-    std::vector<Neuron> neuronPerLayer;
+    this->middleNeurons.resize(middleLayerNumber);
+    for (std::vector<Neuron> n : this->middleNeurons) n.resize(middleNumber);
+
+    std::vector<Neuron> neuronPerLayer(middleNumber);
 
     for (int layer = 0; layer < middleLayerNumber; ++layer) {
         if (layer == 0) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 // 中間層の最初の層については，入力層のニューロン数がニューロンへの入力数となる
-                neuronPerLayer.push_back(Neuron(inputNumber, middleLayerType, dropout_ratio));
+                neuronPerLayer[neuron] = Neuron(inputNumber, middleLayerType, dropout_ratio);
             }
         } else {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 // それ以降の層については，中間層の各層のニューロン数がニューロンへの入力数となる
-                neuronPerLayer.push_back(Neuron(middleNumber, middleLayerType, dropout_ratio));
+                neuronPerLayer[neuron] = Neuron(middleNumber, middleLayerType, dropout_ratio);
             }
         }
-        this->middleNeurons.push_back(neuronPerLayer);
-        neuronPerLayer.clear();
+        this->middleNeurons[layer] = neuronPerLayer;
     }
 
+    this->outputNeurons.resize(outputNumber);
     for (int neuron = 0; neuron < output; ++neuron) {
-        this->outputNeurons.push_back(Neuron(middleNumber, 1, dropout_ratio));
+        this->outputNeurons[neuron] = Neuron(middleNumber, 1, dropout_ratio);
     }
 }
 
@@ -77,7 +81,7 @@ void MultiLayerPerceptron::learn(std::vector<std::vector<double>> x, std::vector
         std::vector<double> ans = answer[trial % answer.size()]; // 教師出力データ
 
         // 出力値を推定：1層目の中間層の出力計算
-        std::vector<std::thread> threads;
+        std::vector<std::thread> threads(num_thread);
         int charge = 1;
         threads.clear();
         if (middleNumber <= num_thread) charge = 1;
@@ -429,7 +433,7 @@ std::vector<double> MultiLayerPerceptron::out(std::vector<double> input, bool sh
     learnedH = std::vector<std::vector<double>>(middleLayerNumber, std::vector<double>(middleNumber, 0));
     learnedO = std::vector<double>(outputNumber, 0);
 
-    std::vector<std::thread> threads;
+    std::vector<std::thread> threads(num_thread);
     int charge = 1;
     threads.clear();
     if (middleNumber <= num_thread) charge = 1;
