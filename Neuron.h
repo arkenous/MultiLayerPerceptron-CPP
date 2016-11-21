@@ -12,7 +12,7 @@
 class Neuron {
 public:
     Neuron();
-    Neuron(unsigned short inputNum, int activation_type, double dropout_ratio);
+    Neuron(unsigned short inputNum, int activation_type, double dropout_rate);
     void dropout(double random_value);
     void learn(double delta, std::vector<double> inputValues);
     double learn_output(std::vector<double> inputValues);
@@ -42,7 +42,7 @@ private:
     std::vector<double> m_hat;
     std::vector<double> nu_hat;
 
-    double dropout_ratio; // どれくらいの割合で中間層ニューロンをDropoutさせるか
+    double dropout_rate; // どれくらいの割合で中間層ニューロンをDropoutさせるか
     double dropout_mask; // Dropoutのマスク値．0.0で殺して1.0で生かす
 };
 

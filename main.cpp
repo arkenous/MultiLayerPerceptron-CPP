@@ -35,7 +35,7 @@ std::vector<double> normalize(std::vector<double> input) {
 }
 
 int main() {
-    double dropout_ratio = 0.0;
+    double dropout_rate = 0.0;
     std::random_device rnd;
     std::mt19937 mt;
     mt.seed(rnd());
@@ -50,7 +50,7 @@ int main() {
     for (int loop = 0; loop < 100; ++loop) {
         MultiLayerPerceptron mlp = MultiLayerPerceptron((unsigned short) test_success[0].size(),
                                                         (unsigned short) test_success[0].size() * 2,
-                                                        (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
+                                                        (unsigned short) answer[0].size(), 1, 1, dropout_rate);
 
         // test_successのシャッフル
         std::shuffle(test_success.begin(), test_success.end(), mt);
@@ -65,7 +65,7 @@ int main() {
         std::cout << "--- NaN check ---" << std::endl;
         while (isnan(mlp.out(train[0], true)[0])) {
             std::cout << "is NaN" << std::endl;
-            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size() * 2, (unsigned short) answer[0].size(), 1, 1, dropout_ratio);
+            mlp = MultiLayerPerceptron((unsigned short) train[0].size(), (unsigned short) train[0].size() * 2, (unsigned short) answer[0].size(), 1, 1, dropout_rate);
             mlp.learn(train, answer);
         }
 

@@ -11,12 +11,12 @@
 
 class MultiLayerPerceptron {
 public:
-    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_ratio);
+    MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_rate);
     void learn(std::vector<std::vector<double>> x, std::vector<std::vector<double>> answer);
     std::string toString();
     std::vector<double> out(std::vector<double> input, bool showResult);
 private:
-    static const unsigned int MAX_TRIAL = 10000; // 学習上限回数
+    static const unsigned int MAX_TRIAL = 100000; // 学習上限回数
     constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
     int num_thread = (int)sysconf(_SC_NPROCESSORS_ONLN); // プロセッサのコア数
 

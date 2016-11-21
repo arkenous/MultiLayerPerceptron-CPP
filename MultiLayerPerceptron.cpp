@@ -14,10 +14,10 @@
  * @param output 出力層のニューロン数
  * @param middleLayer 中間層の層数
  * @param middleLayerType 中間層の活性化関数の種類指定．0: identity 1: sigmoid 2: tanh 3: ReLU
- * @param dropout_ratio Dropout率
+ * @param dropout_rate Dropout率
  * @return
  */
-MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_ratio) {
+MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short middle, unsigned short output, unsigned short middleLayer, int middleLayerType, double dropout_rate) {
     this->inputNumber = input;
     this->middleNumber = middle;
     this->outputNumber = output;
@@ -33,12 +33,12 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
         if (layer == 0) {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 // 中間層の最初の層については，入力層のニューロン数がニューロンへの入力数となる
-                neuronPerLayer[neuron] = Neuron(inputNumber, middleLayerType, dropout_ratio);
+                neuronPerLayer[neuron] = Neuron(inputNumber, middleLayerType, dropout_rate);
             }
         } else {
             for (int neuron = 0; neuron < middleNumber; ++neuron) {
                 // それ以降の層については，中間層の各層のニューロン数がニューロンへの入力数となる
-                neuronPerLayer[neuron] = Neuron(middleNumber, middleLayerType, dropout_ratio);
+                neuronPerLayer[neuron] = Neuron(middleNumber, middleLayerType, dropout_rate);
             }
         }
         this->middleNeurons[layer] = neuronPerLayer;
@@ -46,7 +46,7 @@ MultiLayerPerceptron::MultiLayerPerceptron(unsigned short input, unsigned short 
 
     this->outputNeurons.resize(outputNumber);
     for (int neuron = 0; neuron < output; ++neuron) {
-        this->outputNeurons[neuron] = Neuron(middleNumber, 1, dropout_ratio);
+        this->outputNeurons[neuron] = Neuron(middleNumber, 1, dropout_rate);
     }
 }
 

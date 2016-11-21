@@ -15,14 +15,14 @@ Neuron::Neuron() {}
 /**
  * Neuronのコンストラクタ
  * @param inputNum 入力ニューロン数（入力データ数）
- * @param dropout_ratio Dropout率
+ * @param dropout_rate Dropout率
  * @return Neuronのインスタンス
  */
-Neuron::Neuron(unsigned short inputNum, int activation_type, double dropout_ratio) {
+Neuron::Neuron(unsigned short inputNum, int activation_type, double dropout_rate) {
     this->inputNum = inputNum; // このニューロンへの入力数（前の層のニューロン数）
     this->activation_type = activation_type;
     this->inputWeights.resize(this->inputNum);
-    this->dropout_ratio = dropout_ratio;
+    this->dropout_rate = dropout_rate;
     std::random_device rnd; // 非決定的乱数生成器
     std::mt19937 mt; // メルセンヌ・ツイスタ
     mt.seed(rnd());
@@ -47,7 +47,7 @@ Neuron::Neuron(unsigned short inputNum, int activation_type, double dropout_rati
  * @param random_value 0.0以上1.0未満の乱数値
  */
 void Neuron::dropout(double random_value) {
-    if (random_value < dropout_ratio) this->dropout_mask = 0.0;
+    if (random_value < dropout_rate) this->dropout_mask = 0.0;
     else this->dropout_mask = 1.0;
 }
 
@@ -81,9 +81,9 @@ void Neuron::learn(double delta, std::vector<double> inputValues){
  * @return ニューロンの出力値（活性化関数より得られた値）
  */
 double Neuron::output(std::vector<double> inputValues) {
-    double sum = this->bias * (1.0 - this->dropout_ratio);
+    double sum = this->bias * (1.0 - this->dropout_rate);
     for (int i = 0; i < this->inputNum; ++i) {
-        sum += inputValues[i] * (this->inputWeights[i] * (1.0 - this->dropout_ratio));
+        sum += inputValues[i] * (this->inputWeights[i] * (1.0 - this->dropout_rate));
     }
 
     double activated;
