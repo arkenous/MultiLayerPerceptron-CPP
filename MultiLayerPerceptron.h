@@ -70,6 +70,12 @@ private:
 
   void middleFirstLayerLearnThread(const int begin, const int end);
 
+  void sdaLastLayerLearnThread(const int begin, const int end);
+
+  void sdaMiddleLayerLearnThread(const int layer, const int begin, const int end);
+
+  void sdaFirstLayerLearnThread(const std::vector<double> in, const int begin, const int end);
+
   void middleFirstLayerOutThread(const int begin, const int end);
 
   void middleLayerOutThread(const int layer, const int begin, const int end);
