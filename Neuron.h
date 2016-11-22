@@ -49,7 +49,7 @@ private:
   std::vector<double> inputWeights;
   double delta = 0.0; // 修正量
   double bias = 0.0; // ニューロンのバイアス // -threshold
-  double alpha = 0.001;
+  double alpha = 0.01;
   double epsilon = 0.00000001;
   double rambda = 0.00001; // 荷重減衰の定数．正の小さな定数にしておくことで勾配がゼロでも重みが減る
   double activation_identity(double x); // 0
