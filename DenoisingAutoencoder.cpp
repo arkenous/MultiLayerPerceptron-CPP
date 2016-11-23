@@ -203,7 +203,7 @@ void DenoisingAutoencoder::outLearnThread(const std::vector<double> in, const st
     double delta = o[neuron] - ans[neuron];
 
     // 教師データとの誤差が十分小さい場合は学習しない．そうでなければ正解フラグをfalseに
-    if (std::abs(ans[neuron] - output[neuron]) < MAX_GAP) { continue; }
+    if (mean_squared_error(o[neuron], ans[neuron]) < MAX_GAP) { continue; }
     else { successFlg = false; }
 
     // 出力層の学習
@@ -286,4 +286,8 @@ void DenoisingAutoencoder::outOutThread(const int begin, const int end) {
 
 unsigned long DenoisingAutoencoder::getCurrentMiddleNeuronNum() {
   return middle_neuron_num;
+}
+
+double DenoisingAutoencoder::mean_squared_error(double output, double answer) {
+  return (output - answer) * (output - answer) / 2;
 }

@@ -21,8 +21,8 @@ public:
   std::vector<double> out(std::vector<double> input, bool showResult);
 
 private:
-  static const unsigned int MAX_TRIAL = 100000; // 学習上限回数
-  constexpr static const double MAX_GAP = 0.1; // 許容する誤差の域値
+  static const unsigned int MAX_TRIAL = 10000000; // 学習上限回数
+  constexpr static const double MAX_GAP = 0.01; // 許容する誤差の域値
   int num_thread = (int) sysconf(_SC_NPROCESSORS_ONLN); // プロセッサのコア数
 
 
@@ -81,6 +81,8 @@ private:
   void middleLayerOutThread(const int layer, const int begin, const int end);
 
   void outOutThread(const int begin, const int end);
+
+  double crossEntropy(double output, double answer);
 };
 
 

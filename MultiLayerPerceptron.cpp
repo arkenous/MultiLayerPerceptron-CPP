@@ -441,7 +441,7 @@ void MultiLayerPerceptron::outLearnThread(const std::vector<double> in, const st
     double delta = o[neuron] - ans[neuron];
 
     // 教師データとの誤差が十分小さい場合は学習しない．そうでなければ正解フラグをfalseに
-    if (std::abs(ans[neuron] - output[neuron]) < MAX_GAP) continue;
+    if (crossEntropy(o[neuron], ans[neuron]) < MAX_GAP) continue;
     else successFlg = false;
 
     // 出力層の学習
@@ -724,4 +724,8 @@ void MultiLayerPerceptron::outOutThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron) {
     learnedO[neuron] = outputNeurons[neuron].output(learnedH[middleLayerNumber - 1]);
   }
+}
+
+double MultiLayerPerceptron::crossEntropy(double output, double answer) {
+  return -answer * std::log(output) - (1.0 - answer) * std::log(1.0 - output);
 }

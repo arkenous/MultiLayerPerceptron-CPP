@@ -36,7 +36,7 @@ std::vector<double> normalize(std::vector<double> input) {
 }
 
 int main() {
-  double dropout_rate = 0.5;
+  double dropout_rate = 0.0;
   std::random_device rnd;
   std::mt19937 mt;
   mt.seed(rnd());
@@ -58,7 +58,7 @@ int main() {
     train.push_back(test_success[2]);
 
     StackedDenoisingAutoencoder stackedDenoisingAutoencoder;
-    std::string sda_params = stackedDenoisingAutoencoder.learn(train, train[0].size() / 2, 0.6);
+    std::string sda_params = stackedDenoisingAutoencoder.learn(train, train[0].size() / 2, 0.5);
     unsigned long mlp_input_size = stackedDenoisingAutoencoder.getNumMiddleNeuron();
 
     MultiLayerPerceptron mlp = MultiLayerPerceptron(mlp_input_size, mlp_input_size, answer[0].size(), 1, 1,
